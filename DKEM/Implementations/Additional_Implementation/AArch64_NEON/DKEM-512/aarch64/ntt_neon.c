@@ -65,6 +65,13 @@ void DKE_ntt(int16_t r[DKE_N]) {
                 vst1q_s16(&r[j + len], vsubq_s16(a, t));
             }
         }
+#if DKE_MODE == 512
+        /* q = 7681 leaves only ~4.3q of int16 headroom: reduce after the len=64
+         * and len=8 layers so that no butterfly sum can exceed +-32767. */
+        if (len == 64 || len == 8) {
+            for (j = 0; j < DKE_N; j++) r[j] = DKE_barrett_reduce(r[j]);
+        }
+#endif
     }
 
 #if defined(DKE_NEON_OPT)

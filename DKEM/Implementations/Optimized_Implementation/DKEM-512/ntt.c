@@ -88,6 +88,13 @@ void DKE_ntt(int16_t r[DKE_N]) {
                 r[j] = r[j] + t;
             }
         }
+#if DKE_MODE == 512
+        /* q = 7681 leaves only ~4.3q of int16 headroom: reduce after the 3rd and
+         * 6th layers so that no butterfly sum can exceed +-32767. */
+        if (len == 64 || len == 8) {
+            for (j = 0; j < DKE_N; j++) r[j] = DKE_barrett_reduce(r[j]);
+        }
+#endif
     }
 }
 

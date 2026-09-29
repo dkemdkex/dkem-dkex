@@ -73,6 +73,35 @@ DSYM(dke_ntt512_compiler):
 	add	x16, x16, x15
 	cmp	w17, w11
 	b.ne	.L50
+	// q = 7681 leaves only ~4.3q of int16 headroom: Barrett-reduce all 512
+	// coefficients after the len=64 and len=8 layers (same as scalar DKE_ntt).
+	cmp	w12, #64
+	b.eq	.Lred512
+	cmp	w12, #8
+	b.ne	.Lred512_done
+.Lred512:
+	mov	w13, #8737
+	dup	v16.8h, w13
+	mov	w13, #7681
+	dup	v17.8h, w13
+	movi	v18.4s, #0x2, lsl #24
+	mov	x13, x0
+	mov	x14, #64
+.Lred512_loop:
+	ldr	q2, [x13]
+	smull	v3.4s, v2.4h, v16.4h
+	smull2	v4.4s, v2.8h, v16.8h
+	add	v3.4s, v3.4s, v18.4s
+	add	v4.4s, v4.4s, v18.4s
+	sshr	v3.4s, v3.4s, #26
+	sshr	v4.4s, v4.4s, #26
+	xtn	v5.4h, v3.4s
+	xtn2	v5.8h, v4.4s
+	mls	v2.8h, v5.8h, v17.8h
+	str	q2, [x13], #16
+	subs	x14, x14, #1
+	b.ne	.Lred512_loop
+.Lred512_done:
 	ubfx	x15, x12, #1, #31
 	cmp	w12, #0xf
 	b.hi	.L24

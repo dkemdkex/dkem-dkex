@@ -224,6 +224,13 @@ ntt_fast:
 
 	sub.w poly, #16*strincr
 
+	// q = 7681 leaves only ~4.3q of int16 headroom: reduce all 512 coefficients
+	// between the two 4-layer passes so that no butterfly can overflow.
+	push {r0, r1}
+	bl poly_reduce_asm
+	pop {r0, r1}
+	movt q, #7681
+
 	### LAYER 3+2+1+0
 
 	.equ distance, distance/16 
