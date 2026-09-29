@@ -1,0 +1,24 @@
+# build outputs
+output/
+build/
+*.o
+*.obj
+*.a
+*.lib
+*.elf
+*.bin
+*.hex
+*.map
+*.exe
+
+# editors / OS
+.vscode/
+.idea/
+.vs/
+.DS_Store
+Thumbs.db
+
+# never publish signed / personal documents
+*Appendix A*
+*Intellectual Property*
+*signed*

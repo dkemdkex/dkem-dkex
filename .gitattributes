@@ -1,0 +1,3 @@
+# Store every file byte-for-byte as in the ICCS submission package (no line-ending
+# conversion), so the official ICCS files and the KAT vectors stay identical.
+* -text

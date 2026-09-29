@@ -1,0 +1,83 @@
+DKEM / DKEX / ADKEX Evaluation License
+Version 1.0
+
+Copyright (c) 2026 Liu Rui, Kong Chen, Basque Center for Applied Mathematics,
+Xue Haiyang, Huang Junhao, Gong Boru, Jin Yi (the "Owners").
+All rights reserved except as expressly granted below.
+
+This license applies to the reference, optimized and additional implementations,
+algorithm specifications and test vectors of the algorithms DKEM (ICCS submission
+PKCKEM-380333), DKEX (PKCKEX-359777) and ADKEX (PKCKEX-142803) contained in this
+repository (the "Software"), EXCEPT the components listed in THIRD_PARTY_NOTICES.md,
+which remain under their own terms (see Section 6).
+
+1. Definitions
+
+   "Evaluation Purposes" means evaluating, analyzing, reviewing, testing,
+   benchmarking and cryptanalyzing the algorithms; academic research and teaching;
+   and participation in the evaluation of the Next-generation Commercial
+   Cryptographic Algorithms Program (NGCC) of the Institute of Commercial
+   Cryptography Standards (ICCS).
+
+2. Grant
+
+   Subject to the terms of this license, the Owners grant you a worldwide,
+   royalty-free, non-exclusive, non-transferable, non-sublicensable license to use,
+   copy, modify, compile and run the Software solely for Evaluation Purposes, and to
+   publish the results of such evaluation (including performance figures, security
+   analyses and attacks) without restriction.
+
+3. Redistribution
+
+   You may redistribute the Software, modified or unmodified, solely for Evaluation
+   Purposes, provided that (a) this LICENSE and THIRD_PARTY_NOTICES.md are included,
+   (b) all copyright, attribution and license notices in the source files are kept,
+   and (c) modified files carry a prominent notice stating that you changed them.
+
+4. Restrictions
+
+   Any use other than for Evaluation Purposes -- including incorporating the Software
+   or any part of it into a commercial product or service, or distributing it for
+   production use -- requires the prior written permission of the Owners.
+
+5. No patent license
+
+   No patent license, express or implied, is granted by this license. The Owners
+   have disclosed patents and patent applications that may cover the algorithms in
+   their intellectual property statements to ICCS. Those statements, and the
+   commitments made therein to ICCS, are not limited or changed by this license.
+
+6. Third-party and ICCS components
+
+   The components listed in THIRD_PARTY_NOTICES.md (third-party code and the
+   official ICCS API_PKC template files) are NOT licensed under this license. They
+   are governed by their own licenses or terms, which prevail for those components,
+   and nothing in this license restricts any right you have under them.
+
+7. Future licensing
+
+   In line with the Owners' commitments to ICCS, if an algorithm is selected for
+   standardization the Owners will make its implementations available on terms that
+   place no restriction on worldwide disclosure and free adoption. The Owners may
+   also relicense the Software under more permissive terms at any time.
+
+8. Termination
+
+   This license terminates automatically if you breach any of its terms. Sections 5,
+   6, 9 and 10 survive termination.
+
+9. Disclaimer of warranty
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+   FOR A PARTICULAR PURPOSE, SECURITY AND NON-INFRINGEMENT. THE SOFTWARE IS A
+   RESEARCH AND EVALUATION ARTIFACT AND HAS NOT BEEN CERTIFIED FOR PRODUCTION USE.
+
+10. Limitation of liability
+
+   IN NO EVENT SHALL THE OWNERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+   WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Requests for permissions beyond this license: please open an issue in this
+repository.
