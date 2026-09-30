@@ -22,6 +22,15 @@ extern DRNG_ctx drng_algorithm;
 // The following should be used to get pseudorandom numbers
 // get_random_number(&drng_algorithm, random_number, random_number_len_bits);
 
+/* Keys and messages are read at their fixed lengths, so any other stated length
+   (e.g. a truncated or malformed message) is rejected before the data is read. */
+#define KEX_ERR_INPUT_LEN (-2)
+#define KEX_REQUIRE_LEN(len, bits) \
+    do { if ((len) != (unsigned long long)((bits) / 8)) return KEX_ERR_INPUT_LEN; } while (0)
+/* State buffers: at least the needed length (callers may pass the buffer capacity). */
+#define KEX_REQUIRE_MIN_LEN(len, bits) \
+    do { if ((len) < (unsigned long long)((bits) / 8)) return KEX_ERR_INPUT_LEN; } while (0)
+
 unsigned long long kex_get_passes_num()           { return ADKEX_PASSES_NUM; }
 unsigned long long kex_get_pk_len_bytes()         { return ADKEX_PKBITS / 8; }
 unsigned long long kex_get_sk_len_bytes()         { return ADKEX_SKBITS / 8; }
@@ -76,7 +85,7 @@ int kex_generate_pass1_msg_a(
 {
     uint8_t coins[ADKEX_PASS1_COINBITS / 8];
     (void)ska; (void)ska_len_bytes; (void)pkb; (void)pkb_len_bytes;
-    (void)sta_len_bytes;
+    KEX_REQUIRE_MIN_LEN(*sta_len_bytes, ADKEX_SIGPKBITS);   /* st_A = pk_A after init_a */
 
     /* sta currently holds pk_A (stashed by init_a). Snapshot it so we
        can re-place it after writing sk_e/M_1, since the derand layer
@@ -102,8 +111,10 @@ int kex_generate_pass2_msg_b(
     unsigned char *m2,  unsigned long long *m2_len_bytes)
 {
     uint8_t coins[ADKEX_PASS2_DKEX_COINBITS / 8];
-    (void)skb_len_bytes; (void)pka_len_bytes; (void)m1_len_bytes;
-    (void)stb_len_bytes;
+    KEX_REQUIRE_LEN(skb_len_bytes, ADKEX_SKBITS);
+    KEX_REQUIRE_LEN(pka_len_bytes, ADKEX_PKBITS);
+    KEX_REQUIRE_LEN(m1_len_bytes, ADKEX_M1_BITS);
+    KEX_REQUIRE_MIN_LEN(*stb_len_bytes, ADKEX_SIGPKBITS);   /* st_B = pk_B after init_b */
 
     /* stb holds pk_B (stashed by init_b). Snapshot, then let the derand
        layer overwrite stb with the pass2 layout. */
@@ -127,8 +138,10 @@ int kex_generate_pass3_msg_a(
     unsigned char *sta, unsigned long long *sta_len_bytes,
     unsigned char *m3,  unsigned long long *m3_len_bytes)
 {
-    (void)ska_len_bytes; (void)pkb_len_bytes; (void)m2_len_bytes;
-    (void)sta_len_bytes;
+    KEX_REQUIRE_LEN(ska_len_bytes, ADKEX_SKBITS);
+    KEX_REQUIRE_LEN(pkb_len_bytes, ADKEX_PKBITS);
+    KEX_REQUIRE_LEN(m2_len_bytes, ADKEX_M2_BITS);
+    KEX_REQUIRE_MIN_LEN(*sta_len_bytes, ADKEX_STA_MAX_BITS); /* st_A after pass 1 */
 
     int rc = ADKEX_pass3_msg_a_derand(m3, sta, m2, pkb, ska);
     if (rc < 0) return -1;
@@ -147,7 +160,8 @@ int kex_derive_ss_a(
 {
     /* A finished in pass3; ss_raw is at the front of sta. */
     (void)ska; (void)ska_len_bytes; (void)pkb; (void)pkb_len_bytes;
-    (void)mb;  (void)mb_len_bytes;  (void)sta_len_bytes;
+    (void)mb;  (void)mb_len_bytes;
+    KEX_REQUIRE_MIN_LEN(sta_len_bytes, ADKEX_KDF_INBITS);    /* st_A after pass 3 */
 
     ADKEX_derive_ss_a(ssa, sta);
     *ssa_len_bytes = ADKEX_SSBITS / 8;
@@ -161,8 +175,10 @@ int kex_derive_ss_b(
     unsigned char *stb, unsigned long long stb_len_bytes,
     unsigned char *ssb, unsigned long long *ssb_len_bytes)
 {
-    (void)skb; (void)skb_len_bytes; (void)pka_len_bytes;
-    (void)ma_len_bytes; (void)stb_len_bytes;
+    (void)skb; (void)skb_len_bytes;
+    KEX_REQUIRE_LEN(pka_len_bytes, ADKEX_PKBITS);
+    KEX_REQUIRE_LEN(ma_len_bytes, ADKEX_M3_BITS);
+    KEX_REQUIRE_MIN_LEN(stb_len_bytes, ADKEX_STB_PASS2_BITS); /* st_B after pass 2 */
 
     int rc = ADKEX_derive_ss_b(ssb, ma, stb, pka);
     if (rc < 0) return -1;

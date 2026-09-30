@@ -21,6 +21,15 @@ extern DRNG_ctx drng_algorithm;
 // The following should be used to get pseudorandom numbers
 // get_random_number(&drng_algorithm, random_number, random_number_len_bits);
 
+/* Keys and messages are read at their fixed lengths, so any other stated length
+   (e.g. a truncated or malformed message) is rejected before the data is read. */
+#define KEX_ERR_INPUT_LEN (-2)
+#define KEX_REQUIRE_LEN(len, bits) \
+    do { if ((len) != (unsigned long long)((bits) / 8)) return KEX_ERR_INPUT_LEN; } while (0)
+/* State buffers: at least the needed length (callers may pass the buffer capacity). */
+#define KEX_REQUIRE_MIN_LEN(len, bits) \
+    do { if ((len) < (unsigned long long)((bits) / 8)) return KEX_ERR_INPUT_LEN; } while (0)
+
 unsigned long long kex_get_passes_num()           { return ADKEX_PASSES_NUM; }
 unsigned long long kex_get_pk_len_bytes()         { return ADKEX_PKBITS / 8; }
 unsigned long long kex_get_sk_len_bytes()         { return ADKEX_SKBITS / 8; }
@@ -66,7 +75,8 @@ int kex_generate_pass1_msg_a(
     unsigned char *m1,  unsigned long long *m1_len_bytes)
 {
     uint8_t coins[ADKEX_PASS1_COINBITS / 8];
-    (void)ska; (void)ska_len_bytes; (void)pkb_len_bytes;
+    (void)ska; (void)ska_len_bytes;
+    KEX_REQUIRE_LEN(pkb_len_bytes, ADKEX_PKBITS);
 
     get_random_number(&drng_algorithm, coins, ADKEX_PASS1_COINBITS);
     ADKEX_pass1_msg_a_derand(m1, sta, pkb, coins);
@@ -88,10 +98,12 @@ int kex_generate_pass2_msg_b(
        embeds the public key (sk_B = sA || pk_B || z), so we recover pk_B
        from the suffix of skb. */
     uint8_t coins[ADKEX_PASS2_COINBITS / 8];
-    const uint8_t *pk_B = skb + (ADKEX_SKBITS - ADKEX_PKBITS - ADKEX_SSBITS) / 8;
+    const uint8_t *pk_B;
 
-    (void)skb_len_bytes; (void)pka; (void)pka_len_bytes;
-    (void)m1_len_bytes;
+    (void)pka; (void)pka_len_bytes;
+    KEX_REQUIRE_LEN(skb_len_bytes, ADKEX_SKBITS);
+    KEX_REQUIRE_LEN(m1_len_bytes, ADKEX_M1_BITS);
+    pk_B = skb + (ADKEX_SKBITS - ADKEX_PKBITS - ADKEX_SSBITS) / 8;
 
     get_random_number(&drng_algorithm, coins, ADKEX_PASS2_COINBITS);
     ADKEX_pass2_msg_b_derand(m2, stb, m1, pk_B, skb, coins);
@@ -125,8 +137,10 @@ int kex_derive_ss_a(
     unsigned char *ssa, unsigned long long *ssa_len_bytes)
 {
     /* mb = last responder message = m_2. */
-    (void)ska; (void)ska_len_bytes; (void)pkb_len_bytes;
-    (void)mb_len_bytes; (void)sta_len_bytes;
+    (void)ska; (void)ska_len_bytes;
+    KEX_REQUIRE_LEN(pkb_len_bytes, ADKEX_PKBITS);
+    KEX_REQUIRE_LEN(mb_len_bytes, ADKEX_M2_BITS);
+    KEX_REQUIRE_MIN_LEN(sta_len_bytes, ADKEX_STA_MAX_BITS);
 
     ADKEX_derive_ss_a(ssa, mb, sta, pkb);
     *ssa_len_bytes = ADKEX_SSBITS / 8;
@@ -142,7 +156,8 @@ int kex_derive_ss_b(
 {
     /* B already folded everything (ss_e, ss_s, T) into st_B in pass 2. */
     (void)skb; (void)skb_len_bytes; (void)pka; (void)pka_len_bytes;
-    (void)ma;  (void)ma_len_bytes;  (void)stb_len_bytes;
+    (void)ma;  (void)ma_len_bytes;
+    KEX_REQUIRE_MIN_LEN(stb_len_bytes, ADKEX_STB_MAX_BITS);
 
     ADKEX_derive_ss_b(ssb, stb);
     *ssb_len_bytes = ADKEX_SSBITS / 8;
