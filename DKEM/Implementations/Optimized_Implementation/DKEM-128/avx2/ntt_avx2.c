@@ -133,6 +133,24 @@ static void dke_ntt512_rb(int16_t r[512]) {
 }
 #endif
 
+#if DKE_N == 512 && defined(DKE_AVX2_NTT_INTRINSIC)
+/* q = 7681 leaves only ~4.3q of int16 headroom in the forward NTT, so the natural-order
+ * chain reduces all coefficients after the len = 64 and len = 8 layers. Bit-identical to
+ * the scalar DKE_barrett_reduce: with v = round(2^26 / q), t = (v * a + 2^25) >> 26
+ * equals (mulhi(a, v) + 2^9) >> 10, and the result is a - t * q. */
+static void dke_ntt512_reduce_all(int16_t r[DKE_N]) {
+    const __m256i v = _mm256_set1_epi16((int16_t)(((1 << 26) + DKE_Q / 2) / DKE_Q));
+    const __m256i q = _mm256_set1_epi16(DKE_Q);
+    const __m256i rnd = _mm256_set1_epi16(1 << 9);
+    unsigned int i;
+    for (i = 0; i < DKE_N; i += 16) {
+        __m256i a = _mm256_load_si256((__m256i *)&r[i]);
+        __m256i t = _mm256_srai_epi16(_mm256_add_epi16(_mm256_mulhi_epi16(a, v), rnd), 10);
+        _mm256_store_si256((__m256i *)&r[i], _mm256_sub_epi16(a, _mm256_mullo_epi16(t, q)));
+    }
+}
+#endif
+
 void DKE_ntt(int16_t r[DKE_N]) {
     unsigned int start, k;
     unsigned int len, j;
@@ -162,20 +180,10 @@ void DKE_ntt(int16_t r[DKE_N]) {
         return;
     }
 #endif
-#if defined(DKE_NTT512_RB) && DKE_N == 512
-    dke_ntt512_rb(r);
-    return;
-#endif
-#if defined(DKE_NTT512_ASM) && DKE_N == 512
-    /* Hand-scheduled GAS/MASM register-blocked forward NTT for n=512, q=7681.
-     * Bit-identical to the generic intrinsic (verified 2000-poly fuzz, KAT==ref). */
-    {
-        extern void dke_ntt512_gas(int16_t *, const int16_t *, const int16_t *);
-        extern const int16_t dke_qdata512[];
-        dke_ntt512_gas(r, dke_qdata512, DKE_zetas);
-        return;
-    }
-#endif
+/* DKE_NTT512_RB and DKE_NTT512_ASM: the register-blocked forward transforms have no
+ * reductions between layers and can overflow int16 at q = 7681, so these configurations use
+ * the reduced intrinsic chain below for the forward NTT as well (its output is bit-identical;
+ * the inverse NTT and basemul are unchanged). */
 #if defined(DKE_AVX2_NTT_INTRINSIC)
     /* Natural-order intrinsic forward NTT (canonical, matches scalar). */
     k = 1;
@@ -190,6 +198,9 @@ void DKE_ntt(int16_t r[DKE_N]) {
                 _mm256_store_si256((__m256i *)&r[j + len], b);
             }
         }
+#if DKE_N == 512
+        if (len == 64) dke_ntt512_reduce_all(r);
+#endif
     }
     /* len=8 */
     for (start = 0; start < DKE_N; start += 16) {
@@ -203,6 +214,9 @@ void DKE_ntt(int16_t r[DKE_N]) {
         v = _mm256_inserti128_si256(add, _mm256_castsi256_si128(sub), 1);
         _mm256_store_si256((__m256i *)&r[start], v);
     }
+#if DKE_N == 512
+    dke_ntt512_reduce_all(r);
+#endif
     /* len=4 */
     for (start = 0; start < DKE_N; start += 16) {
         int16_t za = DKE_zetas[k++];

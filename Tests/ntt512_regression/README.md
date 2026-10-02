@@ -23,5 +23,7 @@ It works for the reference, optimized (x86-64 AVX2) and AArch64 NEON implementat
 Cortex-M4 implementation is built for QEMU and is not covered by this script.
 
 The code before commit 8e3417a fails this test on the reference and NEON implementations.
-The optimized (AVX2) implementation was not affected by the overflow and passes it both
-before and after the fix.
+The optimized (AVX2) implementation as built by its build.sh (with DKE_NTT512_PACKED) was not
+affected and passes it both before and after that fix. Built without DKE_NTT512_PACKED, the
+optimized implementation uses a natural-order AVX2 NTT that failed this test until the
+follow-up AVX2 fix; it now passes in every configuration.
